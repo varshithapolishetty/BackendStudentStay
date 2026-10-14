@@ -13,9 +13,12 @@ public class ApiDtos {
     public static class RegisterRequest {
         @NotBlank
         private String fullName;
+        @NotBlank
+        @Pattern(regexp = "^(?=.*[A-Za-z])(?=.*[0-9])[A-Za-z0-9]*[@#$_.-][A-Za-z0-9]*$")
+        private String username;
         @NotBlank @Email
         private String email;
-        @NotBlank @Size(min = 6)
+        @NotBlank
         private String password;
         @Pattern(regexp = "^(?:[6-9]\\d{9})?$")
         private String phone;
@@ -23,6 +26,8 @@ public class ApiDtos {
 
         public String getFullName() { return fullName; }
         public void setFullName(String fullName) { this.fullName = fullName; }
+        public String getUsername() { return username; }
+        public void setUsername(String username) { this.username = username; }
         public String getEmail() { return email; }
         public void setEmail(String email) { this.email = email; }
         public String getPassword() { return password; }
@@ -34,13 +39,16 @@ public class ApiDtos {
     }
 
     public static class LoginRequest {
-        @NotBlank @Email
+        @Email
         private String email;
+        private String username;
         @NotBlank
         private String password;
 
         public String getEmail() { return email; }
         public void setEmail(String email) { this.email = email; }
+        public String getUsername() { return username; }
+        public void setUsername(String username) { this.username = username; }
         public String getPassword() { return password; }
         public void setPassword(String password) { this.password = password; }
     }
@@ -48,14 +56,16 @@ public class ApiDtos {
     public static class AuthResponse {
         private String token;
         private String email;
+        private String username;
         private String fullName;
         private String role;
 
         public AuthResponse() {}
 
-        public AuthResponse(String token, String email, String fullName, String role) {
+        public AuthResponse(String token, String email, String username, String fullName, String role) {
             this.token = token;
             this.email = email;
+            this.username = username;
             this.fullName = fullName;
             this.role = role;
         }
@@ -64,22 +74,134 @@ public class ApiDtos {
         public void setToken(String token) { this.token = token; }
         public String getEmail() { return email; }
         public void setEmail(String email) { this.email = email; }
+        public String getUsername() { return username; }
+        public void setUsername(String username) { this.username = username; }
         public String getFullName() { return fullName; }
         public void setFullName(String fullName) { this.fullName = fullName; }
         public String getRole() { return role; }
         public void setRole(String role) { this.role = role; }
     }
 
+    public static class DemoBookingRequest {
+        @NotNull
+        private Long pgId;
+        @NotBlank @Size(max = 160)
+        private String pgName;
+        @NotBlank @Size(max = 160)
+        private String location;
+        @NotBlank @Size(max = 40)
+        private String category;
+        @NotBlank @Size(max = 40)
+        private String sharing;
+        @NotNull @DecimalMin("0.00")
+        private BigDecimal rent;
+        @NotBlank @Size(max = 120)
+        private String studentName;
+        @NotBlank @Size(max = 120)
+        private String place;
+        @NotBlank @Pattern(regexp = "^[6-9]\\d{9}$")
+        private String phone;
+        @NotNull
+        private LocalDate moveInDate;
+
+        public Long getPgId() { return pgId; }
+        public void setPgId(Long pgId) { this.pgId = pgId; }
+        public String getPgName() { return pgName; }
+        public void setPgName(String pgName) { this.pgName = pgName; }
+        public String getLocation() { return location; }
+        public void setLocation(String location) { this.location = location; }
+        public String getCategory() { return category; }
+        public void setCategory(String category) { this.category = category; }
+        public String getSharing() { return sharing; }
+        public void setSharing(String sharing) { this.sharing = sharing; }
+        public BigDecimal getRent() { return rent; }
+        public void setRent(BigDecimal rent) { this.rent = rent; }
+        public String getStudentName() { return studentName; }
+        public void setStudentName(String studentName) { this.studentName = studentName; }
+        public String getPlace() { return place; }
+        public void setPlace(String place) { this.place = place; }
+        public String getPhone() { return phone; }
+        public void setPhone(String phone) { this.phone = phone; }
+        public LocalDate getMoveInDate() { return moveInDate; }
+        public void setMoveInDate(LocalDate moveInDate) { this.moveInDate = moveInDate; }
+    }
+
+    public static class DemoBookingDto {
+        private Long id;
+        private Long studentId;
+        private String studentName;
+        private String studentEmail;
+        private String studentPhone;
+        private String place;
+        private Long pgId;
+        private String pgName;
+        private String location;
+        private String category;
+        private String sharing;
+        private BigDecimal rent;
+        private LocalDate moveInDate;
+        private String status;
+
+        public DemoBookingDto() {}
+        public DemoBookingDto(com.studentstay.domain.DemoBooking booking) {
+            this.id = booking.getId();
+            this.studentId = booking.getStudent().getId();
+            this.studentName = booking.getStudentName();
+            this.studentEmail = booking.getStudent().getEmail();
+            this.studentPhone = booking.getPhone();
+            this.place = booking.getPlace();
+            this.pgId = booking.getPgId();
+            this.pgName = booking.getPgName();
+            this.location = booking.getLocation();
+            this.category = booking.getCategory();
+            this.sharing = booking.getSharing();
+            this.rent = booking.getRent();
+            this.moveInDate = booking.getMoveInDate();
+            this.status = booking.getStatus().name();
+        }
+
+        public Long getId() { return id; }
+        public void setId(Long id) { this.id = id; }
+        public Long getStudentId() { return studentId; }
+        public void setStudentId(Long studentId) { this.studentId = studentId; }
+        public String getStudentName() { return studentName; }
+        public void setStudentName(String studentName) { this.studentName = studentName; }
+        public String getStudentEmail() { return studentEmail; }
+        public void setStudentEmail(String studentEmail) { this.studentEmail = studentEmail; }
+        public String getStudentPhone() { return studentPhone; }
+        public void setStudentPhone(String studentPhone) { this.studentPhone = studentPhone; }
+        public String getPlace() { return place; }
+        public void setPlace(String place) { this.place = place; }
+        public Long getPgId() { return pgId; }
+        public void setPgId(Long pgId) { this.pgId = pgId; }
+        public String getPgName() { return pgName; }
+        public void setPgName(String pgName) { this.pgName = pgName; }
+        public String getLocation() { return location; }
+        public void setLocation(String location) { this.location = location; }
+        public String getCategory() { return category; }
+        public void setCategory(String category) { this.category = category; }
+        public String getSharing() { return sharing; }
+        public void setSharing(String sharing) { this.sharing = sharing; }
+        public BigDecimal getRent() { return rent; }
+        public void setRent(BigDecimal rent) { this.rent = rent; }
+        public LocalDate getMoveInDate() { return moveInDate; }
+        public void setMoveInDate(LocalDate moveInDate) { this.moveInDate = moveInDate; }
+        public String getStatus() { return status; }
+        public void setStatus(String status) { this.status = status; }
+    }
+
     public static class UserSummaryDto {
-        private Long id; private String email; private String fullName; private String role; private String phone;
+        private Long id; private String email; private String username; private String fullName; private String role; private String phone;
         public UserSummaryDto() {}
         public UserSummaryDto(User user) {
-            this.id = user.getId(); this.email = user.getEmail(); this.fullName = user.getFullName(); this.role = user.getRole().name(); this.phone = user.getPhone();
+            this.id = user.getId(); this.email = user.getEmail(); this.username = user.getLoginName(); this.fullName = user.getFullName(); this.role = user.getRole().name(); this.phone = user.getPhone();
         }
         public Long getId() { return id; }
         public void setId(Long id) { this.id = id; }
         public String getEmail() { return email; }
         public void setEmail(String email) { this.email = email; }
+        public String getUsername() { return username; }
+        public void setUsername(String username) { this.username = username; }
         public String getFullName() { return fullName; }
         public void setFullName(String fullName) { this.fullName = fullName; }
         public String getRole() { return role; }
@@ -127,10 +249,12 @@ public class ApiDtos {
     }
 
     public static class PropertySummaryDto {
-        private Long id; private String title; private String city; private String locality; private String type; private String status; private boolean active; private BigDecimal rentFrom; private String imageUrl; private Set<String> facilities;
+        private Long id; private String title; private String city; private String locality; private String type; private String status; private boolean active; private BigDecimal rentFrom; private String imageUrl; private Set<String> facilities; private long totalBeds; private long availableBeds;
         public PropertySummaryDto() {}
         public PropertySummaryDto(Property property) {
             this.id = property.getId(); this.title = property.getTitle(); this.city = property.getCity(); this.locality = property.getLocality(); this.type = property.getType().name(); this.status = property.getVerificationStatus().name(); this.active = property.isActive(); this.rentFrom = property.getRentFrom(); this.imageUrl = property.getImageUrl(); this.facilities = property.getFacilities();
+            this.totalBeds = property.getRooms().stream().flatMap(room -> room.getBeds().stream()).count();
+            this.availableBeds = property.getRooms().stream().flatMap(room -> room.getBeds().stream()).filter(bed -> bed.getStatus() == BedStatus.AVAILABLE).count();
         }
         public Long getId() { return id; }
         public void setId(Long id) { this.id = id; }
@@ -152,6 +276,10 @@ public class ApiDtos {
         public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
         public Set<String> getFacilities() { return facilities; }
         public void setFacilities(Set<String> facilities) { this.facilities = facilities; }
+        public long getTotalBeds() { return totalBeds; }
+        public void setTotalBeds(long totalBeds) { this.totalBeds = totalBeds; }
+        public long getAvailableBeds() { return availableBeds; }
+        public void setAvailableBeds(long availableBeds) { this.availableBeds = availableBeds; }
     }
 
     public static class PropertyDetailDto {
@@ -212,10 +340,11 @@ public class ApiDtos {
     }
 
     public static class RoomSummaryDto {
-        private Long id; private String name; private String roomType; private Integer capacity; private BigDecimal rentPerMonth; private boolean active; private Integer availableBeds; private Integer totalBeds;
+        private Long id; private String name; private String roomType; private Integer capacity; private BigDecimal rentPerMonth; private boolean active; private Integer availableBeds; private Integer totalBeds; private List<BedSummaryDto> beds;
         public RoomSummaryDto() {}
         public RoomSummaryDto(Room room, long availableBeds, long totalBeds) {
             this.id = room.getId(); this.name = room.getName(); this.roomType = room.getRoomType().name(); this.capacity = room.getCapacity(); this.rentPerMonth = room.getRentPerMonth(); this.active = room.isActive(); this.availableBeds = Math.toIntExact(availableBeds); this.totalBeds = Math.toIntExact(totalBeds);
+            this.beds = room.getBeds().stream().map(BedSummaryDto::new).toList();
         }
         public Long getId() { return id; }
         public void setId(Long id) { this.id = id; }
@@ -233,6 +362,22 @@ public class ApiDtos {
         public void setAvailableBeds(Integer availableBeds) { this.availableBeds = availableBeds; }
         public Integer getTotalBeds() { return totalBeds; }
         public void setTotalBeds(Integer totalBeds) { this.totalBeds = totalBeds; }
+        public List<BedSummaryDto> getBeds() { return beds; }
+        public void setBeds(List<BedSummaryDto> beds) { this.beds = beds; }
+    }
+
+    public static class BedSummaryDto {
+        private Long id; private String bedNumber; private String status;
+        public BedSummaryDto() {}
+        public BedSummaryDto(Bed bed) {
+            this.id = bed.getId(); this.bedNumber = bed.getBedNumber(); this.status = bed.getStatus().name();
+        }
+        public Long getId() { return id; }
+        public void setId(Long id) { this.id = id; }
+        public String getBedNumber() { return bedNumber; }
+        public void setBedNumber(String bedNumber) { this.bedNumber = bedNumber; }
+        public String getStatus() { return status; }
+        public void setStatus(String status) { this.status = status; }
     }
 
     public static class BedRequest {
@@ -240,6 +385,13 @@ public class ApiDtos {
         private String bedNumber;
         public String getBedNumber() { return bedNumber; }
         public void setBedNumber(String bedNumber) { this.bedNumber = bedNumber; }
+    }
+
+    public static class BedAvailabilityRequest {
+        @NotBlank
+        private String status;
+        public String getStatus() { return status; }
+        public void setStatus(String status) { this.status = status; }
     }
 
     public static class ApplicationRequest {
@@ -314,7 +466,7 @@ public class ApiDtos {
     }
 
     public static class BookingDto {
-        private Long id; private Long propertyId; private String propertyTitle; private Long roomId; private String roomName; private Long bedId; private String bedNumber; private String status; private BigDecimal monthlyRent; private LocalDate moveInDate; private String studentName;
+        private Long id; private Long propertyId; private String propertyTitle; private Long roomId; private String roomName; private Long bedId; private String bedNumber; private String status; private BigDecimal monthlyRent; private LocalDate moveInDate; private String studentName; private String studentEmail; private String studentPhone; private String attendanceStatus; private java.time.LocalDateTime checkedInAt; private java.time.LocalDateTime checkedOutAt;
         public BookingDto() {}
         public BookingDto(Booking booking) {
             this.id = booking.getId();
@@ -328,6 +480,11 @@ public class ApiDtos {
             this.monthlyRent = booking.getMonthlyRent();
             this.moveInDate = booking.getMoveInDate();
             this.studentName = booking.getStudent().getFullName();
+            this.studentEmail = booking.getStudent().getEmail();
+            this.studentPhone = booking.getStudent().getPhone();
+            this.attendanceStatus = booking.getAttendanceStatus() == null ? null : booking.getAttendanceStatus().name();
+            this.checkedInAt = booking.getCheckedInAt();
+            this.checkedOutAt = booking.getCheckedOutAt();
         }
         public Long getId() { return id; }
         public void setId(Long id) { this.id = id; }
@@ -351,6 +508,16 @@ public class ApiDtos {
         public void setMoveInDate(LocalDate moveInDate) { this.moveInDate = moveInDate; }
         public String getStudentName() { return studentName; }
         public void setStudentName(String studentName) { this.studentName = studentName; }
+        public String getStudentEmail() { return studentEmail; }
+        public void setStudentEmail(String studentEmail) { this.studentEmail = studentEmail; }
+        public String getStudentPhone() { return studentPhone; }
+        public void setStudentPhone(String studentPhone) { this.studentPhone = studentPhone; }
+        public String getAttendanceStatus() { return attendanceStatus; }
+        public void setAttendanceStatus(String attendanceStatus) { this.attendanceStatus = attendanceStatus; }
+        public java.time.LocalDateTime getCheckedInAt() { return checkedInAt; }
+        public void setCheckedInAt(java.time.LocalDateTime checkedInAt) { this.checkedInAt = checkedInAt; }
+        public java.time.LocalDateTime getCheckedOutAt() { return checkedOutAt; }
+        public void setCheckedOutAt(java.time.LocalDateTime checkedOutAt) { this.checkedOutAt = checkedOutAt; }
     }
 
     public static class CancelBookingRequest {
@@ -358,6 +525,13 @@ public class ApiDtos {
         private String reason;
         public String getReason() { return reason; }
         public void setReason(String reason) { this.reason = reason; }
+    }
+
+    public static class AttendanceRequest {
+        @NotBlank
+        private String status;
+        public String getStatus() { return status; }
+        public void setStatus(String status) { this.status = status; }
     }
 
     public static class PaymentRequest {
@@ -454,9 +628,10 @@ public class ApiDtos {
     }
 
     public static class AdminReportDto {
-        private long totalUsers; private long totalProperties; private long verifiedProperties; private long pendingProperties; private long activeBookings; private long openComplaints; private BigDecimal revenue; private long totalApplications;
-        public AdminReportDto(long totalUsers, long totalProperties, long verifiedProperties, long pendingProperties, long activeBookings, long openComplaints, BigDecimal revenue, long totalApplications) {
+        private long totalUsers; private long totalProperties; private long verifiedProperties; private long pendingProperties; private long activeBookings; private long openComplaints; private BigDecimal revenue; private long totalApplications; private long occupiedBeds; private long vacantBeds;
+        public AdminReportDto(long totalUsers, long totalProperties, long verifiedProperties, long pendingProperties, long activeBookings, long openComplaints, BigDecimal revenue, long totalApplications, long occupiedBeds, long vacantBeds) {
             this.totalUsers = totalUsers; this.totalProperties = totalProperties; this.verifiedProperties = verifiedProperties; this.pendingProperties = pendingProperties; this.activeBookings = activeBookings; this.openComplaints = openComplaints; this.revenue = revenue; this.totalApplications = totalApplications;
+            this.occupiedBeds = occupiedBeds; this.vacantBeds = vacantBeds;
         }
         public long getTotalUsers() { return totalUsers; }
         public void setTotalUsers(long totalUsers) { this.totalUsers = totalUsers; }
@@ -474,5 +649,9 @@ public class ApiDtos {
         public void setRevenue(BigDecimal revenue) { this.revenue = revenue; }
         public long getTotalApplications() { return totalApplications; }
         public void setTotalApplications(long totalApplications) { this.totalApplications = totalApplications; }
+        public long getOccupiedBeds() { return occupiedBeds; }
+        public void setOccupiedBeds(long occupiedBeds) { this.occupiedBeds = occupiedBeds; }
+        public long getVacantBeds() { return vacantBeds; }
+        public void setVacantBeds(long vacantBeds) { this.vacantBeds = vacantBeds; }
     }
 }

@@ -37,9 +37,10 @@ public class PropertyController {
             @RequestParam(required = false) String roomType,
             @RequestParam(required = false) List<String> facilities,
             @RequestParam(defaultValue = "false") boolean includeUnverified,
+            @AuthenticationPrincipal User user,
             @PageableDefault(size = 20, sort = "createdAt") Pageable pageable
     ) {
-        return ResponseEntity.ok(propertyService.searchProperties(city, locality, type, minRent, maxRent, roomType, facilities, includeUnverified, pageable));
+        return ResponseEntity.ok(propertyService.searchProperties(city, locality, type, minRent, maxRent, roomType, facilities, includeUnverified, user, pageable));
     }
 
     @GetMapping("/properties/{id}")
@@ -91,6 +92,17 @@ public class PropertyController {
         return ResponseEntity.ok(new ApiDtos.RoomSummaryDto(room, room.getBeds().stream().filter(b -> b.getStatus() == com.studentstay.domain.BedStatus.AVAILABLE).count(), room.getBeds().size()));
     }
 
+    @PutMapping("/rooms/{id}")
+    @PreAuthorize("hasAnyRole('OWNER', 'ADMIN')")
+    public ResponseEntity<ApiDtos.RoomSummaryDto> updateRoom(@AuthenticationPrincipal User user,
+                                                            @PathVariable Long id,
+                                                            @Valid @RequestBody ApiDtos.RoomRequest request) {
+        Room room = propertyService.updateRoom(user, id, request);
+        return ResponseEntity.ok(new ApiDtos.RoomSummaryDto(room,
+                room.getBeds().stream().filter(bed -> bed.getStatus() == com.studentstay.domain.BedStatus.AVAILABLE).count(),
+                room.getBeds().size()));
+    }
+
     @PostMapping("/rooms/{id}/beds")
     @PreAuthorize("hasAnyRole('OWNER', 'ADMIN')")
     public ResponseEntity<Object> createBed(@AuthenticationPrincipal User user,
@@ -98,5 +110,13 @@ public class PropertyController {
                                            @Valid @RequestBody ApiDtos.BedRequest request) {
         Bed bed = propertyService.createBed(user, id, request);
         return ResponseEntity.ok(bed);
+    }
+
+    @PatchMapping("/beds/{id}/availability")
+    @PreAuthorize("hasAnyRole('OWNER', 'ADMIN')")
+    public ResponseEntity<Object> updateBedAvailability(@AuthenticationPrincipal User user,
+                                                       @PathVariable Long id,
+                                                       @Valid @RequestBody ApiDtos.BedAvailabilityRequest request) {
+        return ResponseEntity.ok(propertyService.updateBedAvailability(user, id, request.getStatus()));
     }
 }

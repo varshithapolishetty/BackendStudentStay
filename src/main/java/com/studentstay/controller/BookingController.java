@@ -40,4 +40,26 @@ public class BookingController {
                                                     @Valid @RequestBody ApiDtos.CancelBookingRequest request) {
         return ResponseEntity.ok(bookingService.cancelBooking(user, id, request.getReason()));
     }
+
+    @PatchMapping("/bookings/{id}/attendance")
+    @PreAuthorize("hasAnyRole('OWNER', 'ADMIN')")
+    public ResponseEntity<ApiDtos.BookingDto> attendance(@AuthenticationPrincipal User user,
+                                                        @PathVariable Long id,
+                                                        @Valid @RequestBody ApiDtos.AttendanceRequest request) {
+        return ResponseEntity.ok(bookingService.recordAttendance(user, id, request.getStatus()));
+    }
+
+    @PostMapping("/bookings/{id}/check-in")
+    @PreAuthorize("hasAnyRole('OWNER', 'ADMIN')")
+    public ResponseEntity<ApiDtos.BookingDto> checkIn(@AuthenticationPrincipal User user,
+                                                     @PathVariable Long id) {
+        return ResponseEntity.ok(bookingService.checkIn(user, id));
+    }
+
+    @PostMapping("/bookings/{id}/check-out")
+    @PreAuthorize("hasAnyRole('OWNER', 'ADMIN')")
+    public ResponseEntity<ApiDtos.BookingDto> checkOut(@AuthenticationPrincipal User user,
+                                                      @PathVariable Long id) {
+        return ResponseEntity.ok(bookingService.checkOut(user, id));
+    }
 }

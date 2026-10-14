@@ -11,7 +11,8 @@ import java.util.List;
 
 @Entity
 @Table(name = "users", uniqueConstraints = {
-        @UniqueConstraint(columnNames = "email")
+        @UniqueConstraint(name = "uk_users_email", columnNames = "email"),
+        @UniqueConstraint(name = "uk_users_username", columnNames = "username")
 })
 public class User implements UserDetails {
     @Id
@@ -21,8 +22,11 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private String fullName;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String email;
+
+    @Column(name = "username")
+    private String loginName;
 
     @Column(nullable = false)
     private String password;
@@ -66,6 +70,11 @@ public class User implements UserDetails {
         this.role = role;
     }
 
+    public User(String fullName, String email, String username, String password, String phone, Role role) {
+        this(fullName, email, password, phone, role);
+        this.loginName = username;
+    }
+
     public Long getId() {
         return id;
     }
@@ -84,6 +93,14 @@ public class User implements UserDetails {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getLoginName() {
+        return loginName;
+    }
+
+    public void setLoginName(String loginName) {
+        this.loginName = loginName;
     }
 
     public String getPassword() {

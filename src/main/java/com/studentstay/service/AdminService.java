@@ -7,6 +7,7 @@ import com.studentstay.exception.ResourceNotFoundException;
 import com.studentstay.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -19,23 +20,36 @@ public class AdminService {
     private final ComplaintRepository complaintRepository;
     private final ApplicationRepository applicationRepository;
     private final PaymentRepository paymentRepository;
+    private final BedRepository bedRepository;
 
     public AdminService(UserRepository userRepository,
                         PropertyRepository propertyRepository,
                         BookingRepository bookingRepository,
                         ComplaintRepository complaintRepository,
                         ApplicationRepository applicationRepository,
-                        PaymentRepository paymentRepository) {
+                        PaymentRepository paymentRepository,
+                        BedRepository bedRepository) {
         this.userRepository = userRepository;
         this.propertyRepository = propertyRepository;
         this.bookingRepository = bookingRepository;
         this.complaintRepository = complaintRepository;
         this.applicationRepository = applicationRepository;
         this.paymentRepository = paymentRepository;
+        this.bedRepository = bedRepository;
     }
 
     public List<ApiDtos.UserSummaryDto> getUsers() {
         return userRepository.findAll().stream().map(ApiDtos.UserSummaryDto::new).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ApiDtos.PropertySummaryDto> getProperties() {
+        return propertyRepository.findAll().stream().map(ApiDtos.PropertySummaryDto::new).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ApiDtos.ComplaintDto> getComplaints() {
+        return complaintRepository.findAll().stream().map(ApiDtos.ComplaintDto::new).toList();
     }
 
     @Transactional
@@ -66,10 +80,13 @@ public class AdminService {
                 activeBookings,
                 openComplaints,
                 revenue,
-                totalApplications
+                totalApplications,
+                bedRepository.countByStatus(BedStatus.ALLOCATED),
+                bedRepository.countByStatus(BedStatus.AVAILABLE)
         );
     }
 
+    @Transactional(readOnly = true)
     public List<ApiDtos.PropertySummaryDto> getPendingProperties() {
         return propertyRepository.findAll().stream()
                 .filter(p -> p.getVerificationStatus() == VerificationStatus.PENDING)

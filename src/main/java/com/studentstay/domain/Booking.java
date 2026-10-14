@@ -46,6 +46,13 @@ public class Booking {
     @Column(length = 1000)
     private String cancellationReason;
 
+    @Enumerated(EnumType.STRING)
+    private AttendanceStatus attendanceStatus;
+
+    private LocalDateTime checkedInAt;
+
+    private LocalDateTime checkedOutAt;
+
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
@@ -151,6 +158,30 @@ public class Booking {
 
     public void setCancellationReason(String cancellationReason) {
         this.cancellationReason = cancellationReason;
+    }
+
+    public AttendanceStatus getAttendanceStatus() {
+        return attendanceStatus;
+    }
+
+    public void setAttendanceStatus(AttendanceStatus attendanceStatus) {
+        this.attendanceStatus = attendanceStatus;
+    }
+
+    public LocalDateTime getCheckedInAt() {
+        return checkedInAt;
+    }
+
+    public void setCheckedInAt(LocalDateTime checkedInAt) {
+        this.checkedInAt = checkedInAt;
+    }
+
+    public LocalDateTime getCheckedOutAt() {
+        return checkedOutAt;
+    }
+
+    public void setCheckedOutAt(LocalDateTime checkedOutAt) {
+        this.checkedOutAt = checkedOutAt;
     }
 
     public LocalDateTime getCreatedAt() {

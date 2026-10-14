@@ -6,6 +6,7 @@ import com.studentstay.exception.ConflictException;
 import com.studentstay.exception.ResourceNotFoundException;
 import com.studentstay.repository.PropertyRepository;
 import com.studentstay.repository.RoomRepository;
+import com.studentstay.repository.BedRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -21,15 +22,22 @@ import java.util.Set;
 public class PropertyService {
     private final PropertyRepository propertyRepository;
     private final RoomRepository roomRepository;
+    private final BedRepository bedRepository;
 
-    public PropertyService(PropertyRepository propertyRepository, RoomRepository roomRepository) {
+    public PropertyService(PropertyRepository propertyRepository, RoomRepository roomRepository, BedRepository bedRepository) {
         this.propertyRepository = propertyRepository;
         this.roomRepository = roomRepository;
+        this.bedRepository = bedRepository;
     }
 
+    @Transactional(readOnly = true)
     public Page<ApiDtos.PropertySummaryDto> searchProperties(String city, String locality, String type, BigDecimal minRent,
                                                             BigDecimal maxRent, String roomType, List<String> facilities,
-                                                            boolean includeUnverified, Pageable pageable) {
+                                                            boolean includeUnverified, User currentUser, Pageable pageable) {
+        if (includeUnverified && (currentUser == null
+                || (currentUser.getRole() != Role.ADMIN && currentUser.getRole() != Role.OWNER))) {
+            throw new ConflictException("Only owners and administrators can view unverified hostels");
+        }
         Specification<Property> spec = Specification.where(PropertySpecifications.cityEquals(city))
                 .and(PropertySpecifications.localityEquals(locality))
                 .and(PropertySpecifications.typeEquals(type))
@@ -37,21 +45,28 @@ public class PropertyService {
                 .and(PropertySpecifications.roomTypeEquals(roomType))
                 .and(PropertySpecifications.facilitiesMatch(facilities))
                 .and(PropertySpecifications.isActive())
-                .and(PropertySpecifications.verifiedOrAccessible(includeUnverified));
+                .and(PropertySpecifications.verifiedOrAccessible(includeUnverified && currentUser != null && currentUser.getRole() == Role.ADMIN));
+        if (includeUnverified && currentUser.getRole() == Role.OWNER) {
+            spec = spec.and(PropertySpecifications.ownerEquals(currentUser));
+        }
         return propertyRepository.findAll(spec, pageable).map(ApiDtos.PropertySummaryDto::new);
     }
 
+    @Transactional(readOnly = true)
     public ApiDtos.PropertyDetailDto getPropertyDetail(Long id, User currentUser, boolean includeUnverified) {
         Property property = propertyRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Property not found"));
-        if (!includeUnverified && (property.getVerificationStatus() != VerificationStatus.VERIFIED || !property.isActive())) {
-            throw new ResourceNotFoundException("Property is not available for public view");
-        }
         if (currentUser != null && currentUser.getRole() == Role.ADMIN) {
             return buildDetail(property);
         }
-        if (currentUser != null && currentUser.getRole() == Role.OWNER && !property.getOwner().getId().equals(currentUser.getId())) {
-            throw new ResourceNotFoundException("Property is not available for this owner");
+        if (currentUser != null && currentUser.getRole() == Role.OWNER) {
+            if (!property.getOwner().getId().equals(currentUser.getId())) {
+                throw new ResourceNotFoundException("Property is not available for this owner");
+            }
+            return buildDetail(property);
+        }
+        if (includeUnverified || property.getVerificationStatus() != VerificationStatus.VERIFIED || !property.isActive()) {
+            throw new ResourceNotFoundException("Property is not available for public view");
         }
         return buildDetail(property);
     }
@@ -127,9 +142,12 @@ public class PropertyService {
 
     @Transactional
     public Bed createBed(User actingUser, Long roomId, ApiDtos.BedRequest request) {
-        Room room = roomRepository.findById(roomId)
+        Room existingRoom = roomRepository.findById(roomId)
                 .orElseThrow(() -> new ResourceNotFoundException("Room not found"));
-        Property property = room.getProperty();
+        Property property = propertyRepository.findByIdForUpdate(existingRoom.getProperty().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Property not found"));
+        Room room = roomRepository.findByIdForUpdate(roomId)
+                .orElseThrow(() -> new ResourceNotFoundException("Room not found"));
         if (actingUser.getRole() != Role.ADMIN && !property.getOwner().getId().equals(actingUser.getId())) {
             throw new ConflictException("You cannot manage this property");
         }
@@ -142,6 +160,54 @@ public class PropertyService {
         return bed;
     }
 
+    @Transactional
+    public Room updateRoom(User actingUser, Long roomId, ApiDtos.RoomRequest request) {
+        Room existingRoom = roomRepository.findById(roomId)
+                .orElseThrow(() -> new ResourceNotFoundException("Room not found"));
+        Property property = propertyRepository.findByIdForUpdate(existingRoom.getProperty().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Property not found"));
+        Room room = roomRepository.findByIdForUpdate(roomId)
+                .orElseThrow(() -> new ResourceNotFoundException("Room not found"));
+        if (actingUser.getRole() != Role.ADMIN && !property.getOwner().getId().equals(actingUser.getId())) {
+            throw new ConflictException("You cannot manage this property");
+        }
+        if (request.getCapacity() < room.getBeds().size()) {
+            throw new ConflictException("Room capacity cannot be less than its existing bed records");
+        }
+        room.setName(request.getName().trim());
+        room.setRoomType(RoomType.valueOf(request.getRoomType().trim().toUpperCase()));
+        room.setRentPerMonth(request.getRentPerMonth());
+        for (int idx = room.getBeds().size() + 1; idx <= request.getCapacity(); idx++) {
+            room.getBeds().add(new Bed(room, "B" + idx));
+        }
+        room.setCapacity(request.getCapacity());
+        return roomRepository.save(room);
+    }
+
+    @Transactional
+    public Bed updateBedAvailability(User actingUser, Long bedId, String requestedStatus) {
+        Bed existingBed = bedRepository.findById(bedId)
+                .orElseThrow(() -> new ResourceNotFoundException("Bed not found"));
+        Room existingRoom = roomRepository.findById(existingBed.getRoom().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Room not found"));
+        Property property = propertyRepository.findByIdForUpdate(existingRoom.getProperty().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Property not found"));
+        Room room = roomRepository.findByIdForUpdate(existingRoom.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Room not found"));
+        Bed bed = bedRepository.findById(bedId)
+                .orElseThrow(() -> new ResourceNotFoundException("Bed not found"));
+        if (actingUser.getRole() != Role.ADMIN && !property.getOwner().getId().equals(actingUser.getId())) {
+            throw new ConflictException("You cannot manage this property");
+        }
+        BedStatus status = BedStatus.valueOf(requestedStatus.trim().toUpperCase());
+        if (status == BedStatus.ALLOCATED || bed.getStatus() == BedStatus.ALLOCATED) {
+            throw new ConflictException("Allocated beds cannot be manually changed");
+        }
+        bed.setStatus(status);
+        return bedRepository.save(bed);
+    }
+
+    @Transactional(readOnly = true)
     public List<ApiDtos.PropertySummaryDto> getOwnerProperties(User owner) {
         if (owner.getRole() == Role.ADMIN) {
             return propertyRepository.findAll().stream().map(ApiDtos.PropertySummaryDto::new).toList();
@@ -185,6 +251,7 @@ class PropertySpecifications {
     public static Specification<Property> roomTypeEquals(String roomType) {
         return (root, query, cb) -> {
             if (roomType == null || roomType.isBlank()) return cb.conjunction();
+            query.distinct(true);
             return cb.equal(root.join("rooms").get("roomType"), RoomType.valueOf(roomType.trim().toUpperCase()));
         };
     }
@@ -192,6 +259,7 @@ class PropertySpecifications {
     public static Specification<Property> facilitiesMatch(List<String> facilities) {
         return (root, query, cb) -> {
             if (facilities == null || facilities.isEmpty()) return cb.conjunction();
+            query.distinct(true);
             var facilityJoin = root.join("facilities", jakarta.persistence.criteria.JoinType.INNER);
             return facilityJoin.in(facilities);
         };
@@ -203,5 +271,9 @@ class PropertySpecifications {
 
     public static Specification<Property> verifiedOrAccessible(boolean includeUnverified) {
         return (root, query, cb) -> includeUnverified ? cb.conjunction() : cb.equal(root.get("verificationStatus"), VerificationStatus.VERIFIED);
+    }
+
+    public static Specification<Property> ownerEquals(User owner) {
+        return (root, query, cb) -> cb.equal(root.get("owner"), owner);
     }
 }

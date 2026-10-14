@@ -3,6 +3,7 @@ package com.studentstay.controller;
 import com.studentstay.domain.User;
 import com.studentstay.dto.ApiDtos;
 import com.studentstay.service.AdminService;
+import com.studentstay.service.DemoBookingService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -16,15 +17,34 @@ import java.util.List;
 public class AdminController {
     private final AdminService adminService;
     private final com.studentstay.service.PropertyService propertyService;
+    private final DemoBookingService demoBookingService;
 
-    public AdminController(AdminService adminService, com.studentstay.service.PropertyService propertyService) {
+    public AdminController(AdminService adminService,
+                           com.studentstay.service.PropertyService propertyService,
+                           DemoBookingService demoBookingService) {
         this.adminService = adminService;
         this.propertyService = propertyService;
+        this.demoBookingService = demoBookingService;
     }
 
     @GetMapping("/users")
     public ResponseEntity<List<ApiDtos.UserSummaryDto>> users() {
         return ResponseEntity.ok(adminService.getUsers());
+    }
+
+    @GetMapping("/properties")
+    public ResponseEntity<List<ApiDtos.PropertySummaryDto>> properties() {
+        return ResponseEntity.ok(adminService.getProperties());
+    }
+
+    @GetMapping("/complaints")
+    public ResponseEntity<List<ApiDtos.ComplaintDto>> complaints() {
+        return ResponseEntity.ok(adminService.getComplaints());
+    }
+
+    @GetMapping("/demo-bookings")
+    public ResponseEntity<List<ApiDtos.DemoBookingDto>> demoBookings() {
+        return ResponseEntity.ok(demoBookingService.getAllBookings());
     }
 
     @PatchMapping("/users/{id}/role")

@@ -16,4 +16,5 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     Optional<Booking> findByBed(Bed bed);
     List<Booking> findByStatus(BookingStatus status);
     boolean existsByBedAndStatus(Bed bed, BookingStatus status);
+    boolean existsByStudentAndStatus(User student, BookingStatus status);
 }

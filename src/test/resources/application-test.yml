@@ -25,6 +25,7 @@ app:
   bootstrap:
     admin:
       email: admin@studentstay.local
+      username: admin
       password: admin123
 
 springdoc:

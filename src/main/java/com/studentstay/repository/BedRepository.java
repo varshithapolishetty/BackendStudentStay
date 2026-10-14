@@ -9,5 +9,7 @@ import java.util.List;
 
 public interface BedRepository extends JpaRepository<Bed, Long> {
     List<Bed> findByRoom(Room room);
+    List<Bed> findByRoomAndStatusOrderByIdAsc(Room room, BedStatus status);
     long countByRoomAndStatus(Room room, BedStatus status);
+    long countByStatus(BedStatus status);
 }
